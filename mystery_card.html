@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mystery Game Card</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #1a0033 0%, #330066 50%, #4d0099 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Адаптируем под размер окна
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let time = 0;
+        const particles = [];
+
+        // Создаём частицы
+        for (let i = 0; i < 60; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 3 + 1,
+                speedX: (Math.random() - 0.5) * 0.5,
+                speedY: (Math.random() - 0.5) * 0.5,
+                opacity: Math.random() * 0.5 + 0.3
+            });
+        }
+
+        function drawBackground() {
+            // Градиент фона
+            const gradient = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 0,
+                canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 1.5
+            );
+            gradient.addColorStop(0, '#0a0015');
+            gradient.addColorStop(0.5, '#1a0033');
+            gradient.addColorStop(1, '#0d001a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Частицы (звёзды)
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+
+                ctx.fillStyle = `rgba(147, 112, 219, ${p.opacity})`;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+            });
+        }
+
+        function drawQuestionMark() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Пульсация
+            const pulse = Math.sin(time * 0.05) * 15 + 150;
+            
+            // Свечение вокруг знака вопроса
+            const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, pulse + 100);
+            glowGradient.addColorStop(0, 'rgba(138, 43, 226, 0.4)');
+            glowGradient.addColorStop(0.5, 'rgba(75, 0, 130, 0.2)');
+            glowGradient.addColorStop(1, 'rgba(138, 43, 226, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Вращающиеся кольца
+            for (let i = 0; i < 3; i++) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(time * 0.01 * (i + 1) * (i % 2 === 0 ? 1 : -1));
+                
+                ctx.strokeStyle = `rgba(147, 112, 219, ${0.2 - i * 0.05})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const radius = Math.min(canvas.width, canvas.height) * 0.2 + i * 30;
+                ctx.arc(0, 0, radius, 0, Math.PI * 1.5);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // Пиксельный знак вопроса
+            const pixelSize = Math.min(canvas.width, canvas.height) * 0.03; // Адаптивный размер
+            const pattern = [
+                [0,0,1,1,1,1,1,0,0],
+                [0,1,1,1,1,1,1,1,0],
+                [1,1,1,0,0,0,1,1,1],
+                [1,1,0,0,0,0,1,1,1],
+                [0,0,0,0,0,1,1,1,0],
+                [0,0,0,0,1,1,1,0,0],
+                [0,0,0,1,1,1,0,0,0],
+                [0,0,0,1,1,0,0,0,0],
+                [0,0,0,1,1,0,0,0,0],
+                [0,0,0,0,0,0,0,0,0],
+                [0,0,0,1,1,0,0,0,0],
+                [0,0,0,1,1,0,0,0,0]
+            ];
+
+            const startX = centerX - (pattern[0].length * pixelSize) / 2;
+            const startY = centerY - (pattern.length * pixelSize) / 2;
+
+            // Тень
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            for (let row = 0; row < pattern.length; row++) {
+                for (let col = 0; col < pattern[row].length; col++) {
+                    if (pattern[row][col] === 1) {
+                        ctx.fillRect(
+                            startX + col * pixelSize + 4,
+                            startY + row * pixelSize + 4,
+                            pixelSize - 1,
+                            pixelSize - 1
+                        );
+                    }
+                }
+            }
+
+            // Градиент для знака
+            const gradient = ctx.createLinearGradient(startX, startY, startX, startY + pattern.length * pixelSize);
+            gradient.addColorStop(0, '#ff00ff');
+            gradient.addColorStop(0.5, '#9370db');
+            gradient.addColorStop(1, '#4b0082');
+
+            for (let row = 0; row < pattern.length; row++) {
+                for (let col = 0; col < pattern[row].length; col++) {
+                    if (pattern[row][col] === 1) {
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(
+                            startX + col * pixelSize,
+                            startY + row * pixelSize,
+                            pixelSize - 1,
+                            pixelSize - 1
+                        );
+                        
+                        // Блики
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                        ctx.fillRect(
+                            startX + col * pixelSize,
+                            startY + row * pixelSize,
+                            pixelSize / 3,
+                            pixelSize / 3
+                        );
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            drawBackground();
+            drawQuestionMark();
+            
+            time++;
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
